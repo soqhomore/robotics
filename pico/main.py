@@ -39,6 +39,7 @@ EYE_MOSI_PIN = 19
 EYE_CS_PIN = 17
 
 CONFIG_FILE = "config.json"
+FW_VERSION = "usb-3"     # panel.html이 맞는 버전인지 확인하는 데 씀
 
 # 패널에서 바꾸고 config.json에 저장할 수 있는 값들
 DEFAULTS = {
@@ -128,6 +129,7 @@ servo_power = True
 class Servo:
     def __init__(self, key, pin, lo_key, hi_key, rest_key, speed_key):
         self.key = key
+        self.pin = pin
         self.pwm = PWM(Pin(pin))
         self.pwm.freq(50)
         self.lo_key = lo_key
@@ -457,6 +459,34 @@ async def act_power_test():
     log("전원 테스트 끝. Pico가 재부팅되지 않았다면 통과")
 
 
+# 원인 찾기용: 서보 하나만 기본 위치 기준 ±20도로 3번 흔든다
+async def _wiggle(s, rest_key):
+    rest = cfg[rest_key]
+    s.set(rest)
+    await wait_still()
+    for _ in range(3):
+        s.set(rest + 20)
+        await wait_still()
+        await asyncio.sleep_ms(150)
+        s.set(rest - 20)
+        await wait_still()
+        await asyncio.sleep_ms(150)
+    s.set(rest)
+    await wait_still()
+
+
+async def act_wiggle_face():
+    await _wiggle(face, "face_center")
+
+
+async def act_wiggle_ear_l():
+    await _wiggle(ear_l, "ear_l_down")
+
+
+async def act_wiggle_ear_r():
+    await _wiggle(ear_r, "ear_r_down")
+
+
 ACTIONS = {
     "alert":      ("반응 동작 (귀·고개·눈)", act_alert),
     "look_left":  ("고개 왼쪽 (각도 −)", act_look_left),
@@ -467,6 +497,10 @@ ACTIONS = {
     "sweep":      ("전체 범위 왕복", act_sweep),
     "self_test":  ("셀프 테스트", act_self_test),
     "power_test": ("전원 강하 테스트", act_power_test),
+    # 아래는 원인 찾기 전용 (동작 버튼 목록에는 안 나옴)
+    "wiggle_face":  ("얼굴 흔들기", act_wiggle_face),
+    "wiggle_ear_l": ("왼쪽 귀 흔들기", act_wiggle_ear_l),
+    "wiggle_ear_r": ("오른쪽 귀 흔들기", act_wiggle_ear_r),
 }
 ACTION_ORDER = ("alert", "look_left", "look_right", "ear_wiggle", "ear_alt",
                 "blink", "sweep", "self_test", "power_test")
@@ -580,6 +614,32 @@ def apply_setting(key):
         s.set(s.target)       # 범위가 바뀌었으면 목표를 다시 제한
 
 
+# 서보 신호 핀을 잠깐 입력으로 바꿔서, 내부 풀업/풀다운을 걸었을 때 읽히는 값을 잰다.
+#   up=1, down=0 : 아무것도 강하게 잡아당기지 않음 (정상)
+#   up=0, down=0 : 0V 쪽으로 붙어 있음 (GND 줄에 꽂힘, 또는 전원 없는 서보가 끌어내림)
+#   up=1, down=1 : 전압이 걸려 있음 (+ 줄에 꽂힘이면 위험)
+def pin_check():
+    stop_action()
+    result = {}
+    for s in servos:
+        s.pwm.deinit()
+        p = Pin(s.pin, Pin.IN, Pin.PULL_UP)
+        time.sleep_ms(5)
+        up = p.value()
+        p.init(Pin.IN, Pin.PULL_DOWN)
+        time.sleep_ms(5)
+        down = p.value()
+        s.pwm = PWM(Pin(s.pin))
+        s.pwm.freq(50)
+        if servo_power:
+            s.write()
+        else:
+            s.off()
+        result[s.key] = {"pin": s.pin, "up": up, "down": down}
+    log("신호 핀 검사: " + ", ".join("{} GP{} {}{}".format(k, v["pin"], v["up"], v["down"]) for k, v in result.items()))
+    return result
+
+
 def ok(**extra):
     extra["ok"] = True
     return extra
@@ -598,7 +658,7 @@ def do(c):
         streaming = True
         emit("@C", {"cfg": cfg, "exprs": EXPRESSIONS,
                     "actions": [[k, ACTIONS[k][0]] for k in ACTION_ORDER],
-                    "reset": reset_cause, "boot": BOOT_ID})
+                    "reset": reset_cause, "boot": BOOT_ID, "fw": FW_VERSION})
         led.value(1)
         log("패널 연결됨")
         return ok()
@@ -702,6 +762,10 @@ def do(c):
         return ok(cfg=cfg)
 
     # ---- 진단 ----
+    if name == "ping":
+        return ok(t=round(uptime(), 1), fw=FW_VERSION, power=servo_power)
+    if name == "pincheck":
+        return ok(pins=pin_check())
     if name == "reset_stats":
         for k in ("alerts", "actions"):
             stats[k] = 0
