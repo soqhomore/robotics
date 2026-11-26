@@ -148,13 +148,13 @@ ol.check strong { display: block; }
       <!-- 서보 -->
       <rect class="box" x="300" y="22" width="170" height="66" rx="8"/>
       <text class="title" x="314" y="46">얼굴 회전 · MG996</text>
-      <text class="sub" x="314" y="64">신호 → GP12 (16번)</text>
+      <text class="sub" x="314" y="64">신호 → GP14 (19번)</text>
       <rect class="box" x="500" y="22" width="170" height="66" rx="8"/>
       <text class="title" x="514" y="46">왼쪽 귀 · MG90S</text>
-      <text class="sub" x="514" y="64">신호 → GP11 (15번)</text>
+      <text class="sub" x="514" y="64">신호 → GP15 (20번)</text>
       <rect class="box" x="700" y="22" width="170" height="66" rx="8"/>
       <text class="title" x="714" y="46">오른쪽 귀 · MG90S</text>
-      <text class="sub" x="714" y="64">신호 → GP10 (14번)</text>
+      <text class="sub" x="714" y="64">신호 → GP11 (15번)</text>
       <rect class="plug" x="365" y="88" width="40" height="14" rx="3"/>
       <rect class="plug" x="565" y="88" width="40" height="14" rx="3"/>
       <rect class="plug" x="765" y="88" width="40" height="14" rx="3"/>
@@ -183,14 +183,14 @@ ol.check strong { display: block; }
       <g class="unused">
         <circle cx="520" cy="240" r="3"/><circle cx="520" cy="260" r="3"/><circle cx="520" cy="280" r="3"/><circle cx="520" cy="300" r="3"/><circle cx="520" cy="320" r="3"/>
         <circle cx="520" cy="340" r="3"/><circle cx="520" cy="360" r="3"/><circle cx="520" cy="380" r="3"/><circle cx="520" cy="400" r="3"/><circle cx="520" cy="420" r="3"/>
-        <circle cx="520" cy="440" r="3"/><circle cx="520" cy="460" r="3"/><circle cx="520" cy="480" r="3"/><circle cx="520" cy="560" r="3"/><circle cx="520" cy="580" r="3"/><circle cx="520" cy="600" r="3"/><circle cx="520" cy="620" r="3"/>
+        <circle cx="520" cy="440" r="3"/><circle cx="520" cy="460" r="3"/><circle cx="520" cy="480" r="3"/><circle cx="520" cy="500" r="3"/><circle cx="520" cy="540" r="3"/><circle cx="520" cy="560" r="3"/><circle cx="520" cy="580" r="3"/>
         <circle cx="680" cy="260" r="3"/><circle cx="680" cy="300" r="3"/><circle cx="680" cy="320" r="3"/><circle cx="680" cy="380" r="3"/><circle cx="680" cy="420" r="3"/><circle cx="680" cy="340" r="3"/><circle cx="680" cy="360" r="3"/>
         <circle cx="680" cy="400" r="3"/><circle cx="680" cy="440" r="3"/><circle cx="680" cy="460" r="3"/><circle cx="680" cy="500" r="3"/><circle cx="680" cy="520" r="3"/>
         <circle cx="680" cy="580" r="3"/><circle cx="680" cy="620" r="3"/>
       </g>
-      <text class="pin-on" x="530" y="504">14 GP10</text>
       <text class="pin-on" x="530" y="524">15 GP11</text>
-      <text class="pin-on" x="530" y="544">16 GP12</text>
+      <text class="pin-on" x="530" y="604">19 GP14</text>
+      <text class="pin-on" x="530" y="624">20 GP15</text>
       <text class="pin-on" x="670" y="244" text-anchor="end">VBUS 40</text>
       <text class="pin-on" x="670" y="284" text-anchor="end">GND 38</text>
       <text class="pin-on" x="670" y="484" text-anchor="end">GND 28</text>
@@ -229,9 +229,9 @@ ol.check strong { display: block; }
       <path class="w w-vplus" d="M785 102 V130"/><path class="w w-brn" d="M797 102 V150"/>
 
       <!-- 배선: 서보 신호 (주황 → Pico) -->
-      <path class="w w-sig" d="M373 102 V540 H520"/>
-      <path class="w w-sig" d="M573 102 V170 H395 V520 H520"/>
-      <path class="w w-sig" d="M773 102 V185 H415 V500 H520"/>
+      <path class="w w-sig" d="M373 102 V600 H387 a8 8 0 0 1 16 0 H520"/>
+      <path class="w w-sig" d="M573 102 V170 H395 V620 H520"/>
+      <path class="w w-sig" d="M773 102 V185 H415 V520 H520"/>
 
       <!-- 배선: 공통 GND (Pico GND 38 → − 줄) -->
       <path class="w w-gnd" d="M680 280 H820 V150"/>
@@ -259,7 +259,7 @@ ol.check strong { display: block; }
       <!-- 핀 -->
       <g class="pinhole">
         <circle cx="190" cy="130" r="4"/><circle cx="190" cy="150" r="4"/>
-        <circle cx="520" cy="500" r="4"/><circle cx="520" cy="520" r="4"/><circle cx="520" cy="540" r="4"/>
+        <circle cx="520" cy="520" r="4"/><circle cx="520" cy="600" r="4"/><circle cx="520" cy="620" r="4"/>
         <circle cx="680" cy="240" r="4"/><circle cx="680" cy="280" r="4"/><circle cx="680" cy="480" r="4"/>
         <circle cx="680" cy="540" r="4"/><circle cx="680" cy="560" r="4"/><circle cx="680" cy="600" r="4"/>
         <circle cx="780" cy="500" r="4"/><circle cx="780" cy="520" r="4"/><circle cx="780" cy="540" r="4"/><circle cx="780" cy="560" r="4"/><circle cx="780" cy="580" r="4"/>
@@ -296,9 +296,9 @@ ol.check strong { display: block; }
             <tr><td><span class="sw" style="background:var(--cap)"></span>콘덴서 흰 띠 쪽 다리 (−)</td><td>− 줄</td><td class="num">–</td></tr>
 
             <tr class="group"><td colspan="4">서보 신호 (주황 선)</td></tr>
-            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>얼굴 MG996</td><td><code>GP12</code></td><td class="num">16</td><td></td></tr>
-            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>왼쪽 귀 MG90S</td><td><code>GP11</code></td><td class="num">15</td><td></td></tr>
-            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>오른쪽 귀 MG90S</td><td><code>GP10</code></td><td class="num">14</td><td></td></tr>
+            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>머리(얼굴) MG996</td><td><code>GP14</code></td><td class="num">19</td><td></td></tr>
+            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>왼쪽 귀 MG90S</td><td><code>GP15</code></td><td class="num">20</td><td></td></tr>
+            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>오른쪽 귀 MG90S</td><td><code>GP11</code></td><td class="num">15</td><td></td></tr>
 
             <tr class="group"><td colspan="4">눈 (MAX7219 × 2)</td></tr>
             <tr><td><span class="sw" style="background:var(--w-5v)"></span>왼쪽 눈 <code>VCC</code></td><td><code>VBUS</code></td><td class="num">40</td><td>USB 5V</td></tr>

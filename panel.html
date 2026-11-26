@@ -288,9 +288,9 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 const SERVOS = [
-  { id: "face", label: "얼굴 회전", ch: "GP12 · MG996", presets: [["최소", "face_min"], ["중앙", "face_center"], ["최대", "face_max"]] },
-  { id: "ear_l", label: "왼쪽 귀", ch: "GP11 · MG90S", presets: [["내림", "ear_l_down"], ["세움", "ear_l_up"]] },
-  { id: "ear_r", label: "오른쪽 귀", ch: "GP10 · MG90S", presets: [["내림", "ear_r_down"], ["세움", "ear_r_up"]] },
+  { id: "face", label: "얼굴 회전", ch: "GP14 · MG996", presets: [["최소", "face_min"], ["중앙", "face_center"], ["최대", "face_max"]] },
+  { id: "ear_l", label: "왼쪽 귀", ch: "GP15 · MG90S", presets: [["내림", "ear_l_down"], ["세움", "ear_l_up"]] },
+  { id: "ear_r", label: "오른쪽 귀", ch: "GP11 · MG90S", presets: [["내림", "ear_r_down"], ["세움", "ear_r_up"]] },
 ];
 const EXPR_LABEL = { normal: "기본", round: "경청", blink: "감은 눈", sleepy: "졸림", smile: "웃음", heart: "하트", x: "X", custom: "직접 그림" };
 const CAL = [
@@ -373,7 +373,7 @@ let fwVersion = null;
 const diag = { comm: null, pins: null, wiggle: {} };
 const SERVO_KEYS = ["face", "ear_l", "ear_r"];
 const SERVO_NAME = { face: "얼굴 (MG996)", ear_l: "왼쪽 귀 (MG90S)", ear_r: "오른쪽 귀 (MG90S)" };
-const SERVO_WHERE = { face: "주황 선 → GP12 · Pico 왼쪽 16번 줄", ear_l: "주황 선 → GP11 · Pico 왼쪽 15번 줄", ear_r: "주황 선 → GP10 · Pico 왼쪽 14번 줄" };
+const SERVO_WHERE = { face: "주황 선 → GP14 · Pico 왼쪽 19번 줄", ear_l: "주황 선 → GP15 · Pico 왼쪽 20번 줄", ear_r: "주황 선 → GP11 · Pico 왼쪽 15번 줄" };
 const BADGE = { ok: "정상", warn: "주의", bad: "문제", run: "검사 중…", idle: "대기" };
 
 function setStep(id, status, html) {

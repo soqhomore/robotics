@@ -7,7 +7,7 @@
   Thonny 셸에서 직접 쓸 때는 h 입력 -> 명령어 목록
 
 배선 (괄호는 Pico 물리 핀 번호)
-  서보 신호  얼굴 MG996 -> GP12 (16), 왼쪽 귀 MG90S -> GP11 (15), 오른쪽 귀 MG90S -> GP10 (14)
+  서보 신호  머리(얼굴) MG996 -> GP14 (19), 왼쪽 귀 MG90S -> GP15 (20), 오른쪽 귀 MG90S -> GP11 (15)
   서보 전원  빨강 -> 5V 어댑터 +, 갈색 -> 어댑터 -,  어댑터 - 와 Pico GND (38) 연결 (공통 GND 필수)
   콘덴서     KMG 16V 전해 콘덴서를 서보 전원 + / - 줄 사이에 (긴 다리 +, 흰 띠 쪽 -)
   MAX7219    DIN GP19 (25), CLK GP18 (24), CS GP17 (22), VCC VBUS (40), GND (28)
@@ -31,9 +31,9 @@ import machine
 from machine import Pin, PWM, SPI
 
 # ---------------- 핀 ----------------
-FACE_PIN = 12
-EAR_L_PIN = 11
-EAR_R_PIN = 10
+FACE_PIN = 14
+EAR_L_PIN = 15
+EAR_R_PIN = 11
 EYE_SCK_PIN = 18
 EYE_MOSI_PIN = 19
 EYE_CS_PIN = 17
