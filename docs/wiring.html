@@ -1,0 +1,330 @@
+<title>토끼 로봇 배선도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 엔지니어링 도면 한 장 — 상단 도면(가로 스크롤), 아래 핀 연결표와 점검 목록 */
+:root {
+  --bg: #f6f7f5;
+  --panel: #ffffff;
+  --ink: #1d2422;
+  --muted: #5d6865;
+  --faint: #b9c2be;
+  --line: #d5dbd8;
+  --board: #e9efec;
+  --pico: #e3efe6;
+  --accent: #1f7a68;
+  --w-5v: #d23c32;
+  --w-3v3: #d9487f;
+  --w-gnd: #2a2f2e;
+  --w-vplus: #e0782a;
+  --w-spi: #8a4fc7;
+  --w-mic: #2e9b57;
+  --w-btn: #b8920f;
+  --w-servo-sig: #f0b021;
+  --w-servo-brn: #7a4b2a;
+  --plug: #141716;
+  --cap: #2d5596;
+  --cap-stripe: #dfe5ee;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141917; --panel: #1c2321; --ink: #e6ece9; --muted: #9aa6a2; --faint: #4a5753; --line: #33403c; --board: #232c29; --pico: #1f3229;
+    --accent: #4fc2a8; --w-5v: #ff6b5e; --w-3v3: #f590b8; --w-gnd: #c9d1ce; --w-vplus: #ff9d52;
+    --w-spi: #b98cf0; --w-mic: #5fd08a; --w-btn: #e6c24a; --w-servo-sig: #ffd36b; --w-servo-brn: #c48a5e; --plug: #0b0e0d; --cap: #4a78c4; --cap-stripe: #d7dee8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141917; --panel: #1c2321; --ink: #e6ece9; --muted: #9aa6a2; --faint: #4a5753; --line: #33403c; --board: #232c29; --pico: #1f3229;
+  --accent: #4fc2a8; --w-5v: #ff6b5e; --w-3v3: #f590b8; --w-gnd: #c9d1ce; --w-vplus: #ff9d52;
+  --w-spi: #b98cf0; --w-mic: #5fd08a; --w-btn: #e6c24a; --w-servo-sig: #ffd36b; --w-servo-brn: #c48a5e; --plug: #0b0e0d; --cap: #4a78c4; --cap-stripe: #d7dee8;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.6; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 56px; display: grid; gap: 28px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: 28px; margin: 0; text-wrap: balance; }
+h2 { font-size: 18px; margin: 0 0 12px; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 72ch; }
+code { font-family: var(--font-mono); font-size: .92em; }
+
+.sheet { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.scroll { overflow-x: auto; }
+.scroll svg { display: block; width: 100%; min-width: 960px; height: auto; }
+
+svg .box { fill: var(--board); stroke: var(--line); stroke-width: 1.5; }
+svg .box-main { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .box-pico { fill: var(--pico); stroke: var(--accent); stroke-width: 2; }
+svg .usb { fill: var(--faint); }
+svg .title { fill: var(--ink); font: 700 15px var(--font-body); }
+svg .sub { fill: var(--muted); font: 400 12px var(--font-body); }
+svg .pin { fill: var(--muted); font: 500 11.5px var(--font-mono); }
+svg .pin-on { fill: var(--ink); font: 500 11.5px var(--font-mono); }
+svg .note { fill: var(--muted); font: 400 11.5px var(--font-body); }
+svg .dot { fill: var(--ink); }
+svg .pinhole { fill: var(--panel); stroke: var(--ink); stroke-width: 1.5; }
+svg .unused { fill: none; stroke: var(--faint); stroke-width: 1.2; }
+svg .cap-body { fill: var(--cap); }
+svg .cap-stripe { fill: var(--cap-stripe); }
+svg .plug { fill: var(--plug); stroke: var(--muted); stroke-width: 1; }
+svg .w { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+svg .w-5v { stroke: var(--w-5v); }
+svg .w-3v3 { stroke: var(--w-3v3); }
+svg .w-gnd { stroke: var(--w-gnd); }
+svg .w-vplus { stroke: var(--w-vplus); }
+svg .w-spi { stroke: var(--w-spi); }
+svg .w-mic { stroke: var(--w-mic); }
+svg .w-btn { stroke: var(--w-btn); }
+svg .w-sig { stroke: var(--w-servo-sig); }
+svg .w-brn { stroke: var(--w-servo-brn); }
+svg .rail-v { stroke: var(--w-vplus); stroke-width: 5; }
+svg .rail-g { stroke: var(--w-gnd); stroke-width: 5; }
+svg .dash-l { stroke-dasharray: 7 4; }
+svg .dash-s { stroke-dasharray: 2 4; }
+svg .rail-label { font: 600 12px var(--font-mono); }
+svg .wire-label { font: 600 11.5px var(--font-body); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; padding: 14px 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend i { width: 22px; height: 4px; border-radius: 2px; display: inline-block; }
+
+.grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; }
+@media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+.grid > section { min-width: 0; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 500; letter-spacing: .04em; }
+td.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+tr.group td { padding-top: 18px; font-weight: 700; color: var(--accent); }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+ol.check { margin: 0; padding-left: 20px; display: grid; gap: 12px; }
+ol.check strong { display: block; }
+.warn { margin: 18px 0 0; border: 1px solid var(--w-5v); border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+.warn strong { color: var(--w-5v); }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">robot_pico_usb · Raspberry Pi Pico W · PCA9685 · 마이크 · 버튼 없음</div>
+    <h1>토끼 로봇 배선도</h1>
+    <p class="lede">서보 3개를 Pico 핀에 직접 연결하고, 컴퓨터와는 USB 케이블 하나로 연결하는 구성입니다. 서보 전원은 5V 어댑터에서 브레드보드 +/− 줄로 나눠 주고, 그 줄에 KMG 16V 전해 콘덴서를 꽂아 전압이 흔들리지 않게 합니다. Pico는 실제 핀 배치대로 그렸고, 회색 구멍은 쓰지 않는 핀입니다. 핀 이름 옆 숫자는 보드의 물리 핀 번호입니다.</p>
+  </header>
+
+  <div class="sheet">
+    <div class="scroll">
+    <svg viewBox="0 0 1200 690" role="img" aria-label="Raspberry Pi Pico W에 서보 3개, MAX7219 2개, 콘덴서를 연결한 배선도">
+      <!-- 어댑터 -->
+      <rect class="box" x="30" y="100" width="160" height="80" rx="8"/>
+      <text class="title" x="44" y="124">5V 6A 어댑터</text>
+      <text class="sub" x="44" y="142">DC 잭 터미널</text>
+      <text class="pin" x="178" y="134" text-anchor="end">+</text>
+      <text class="pin" x="178" y="154" text-anchor="end">−</text>
+
+      <!-- 서보 전원 줄 (브레드보드) -->
+      <line class="rail-v" x1="190" y1="130" x2="880" y2="130"/>
+      <line class="rail-g" x1="190" y1="150" x2="880" y2="150"/>
+      <text class="rail-label" x="888" y="134" style="fill:var(--w-vplus)">+ 줄</text>
+      <text class="rail-label" x="888" y="154" style="fill:var(--w-gnd)">− 줄</text>
+      <text class="note" x="30" y="202">+/− 줄 = 미니 브레드보드</text>
+
+      <!-- 콘덴서: 긴 다리(+) → + 줄, 흰 띠 쪽 다리(−) → − 줄 -->
+      <rect class="cap-body" x="228" y="50" width="28" height="54" rx="5"/>
+      <rect class="cap-stripe" x="248" y="50" width="8" height="54"/>
+      <text class="pin" x="252" y="70" text-anchor="middle" style="fill:var(--cap)">−</text>
+      <text class="pin" x="252" y="92" text-anchor="middle" style="fill:var(--cap)">−</text>
+      <path class="w w-vplus" d="M236 104 V130"/>
+      <path class="w w-gnd" d="M251 104 V150"/>
+      <text class="title" x="220" y="66" text-anchor="end">콘덴서</text>
+      <text class="sub" x="220" y="83" text-anchor="end">KMG 16V</text>
+      <text class="note" x="30" y="218">콘덴서 흰 띠 쪽(−) 다리 → − 줄</text>
+
+      <!-- 서보 -->
+      <rect class="box" x="300" y="22" width="170" height="66" rx="8"/>
+      <text class="title" x="314" y="46">얼굴 회전 · MG996</text>
+      <text class="sub" x="314" y="64">신호 → GP12 (16번)</text>
+      <rect class="box" x="500" y="22" width="170" height="66" rx="8"/>
+      <text class="title" x="514" y="46">왼쪽 귀 · MG90S</text>
+      <text class="sub" x="514" y="64">신호 → GP11 (15번)</text>
+      <rect class="box" x="700" y="22" width="170" height="66" rx="8"/>
+      <text class="title" x="714" y="46">오른쪽 귀 · MG90S</text>
+      <text class="sub" x="714" y="64">신호 → GP10 (14번)</text>
+      <rect class="plug" x="365" y="88" width="40" height="14" rx="3"/>
+      <rect class="plug" x="565" y="88" width="40" height="14" rx="3"/>
+      <rect class="plug" x="765" y="88" width="40" height="14" rx="3"/>
+
+      <!-- 확대 그림: 서보 선 연결법 -->
+      <rect class="box" x="985" y="20" width="205" height="196" rx="8"/>
+      <text class="title" x="997" y="42">서보 선 연결법</text>
+      <text class="sub" x="997" y="59">커넥터 1개 = 선 3가닥</text>
+      <rect class="plug" x="1000" y="78" width="26" height="98" rx="4"/>
+      <path class="w w-sig" style="stroke-width:3.5" d="M1026 96 H1052"/>
+      <path class="w w-vplus" style="stroke-width:3.5" d="M1026 128 H1052"/>
+      <path class="w w-brn" style="stroke-width:3.5" d="M1026 160 H1052"/>
+      <text class="wire-label" x="1057" y="100" style="fill:var(--w-servo-sig)">주황 → Pico 핀</text>
+      <text class="wire-label" x="1057" y="132" style="fill:var(--w-vplus)">빨강 → + 줄</text>
+      <text class="wire-label" x="1057" y="164" style="fill:var(--w-servo-brn)">갈색 → − 줄</text>
+      <text class="sub" x="997" y="202">수-수 점퍼선으로 한 가닥씩</text>
+
+      <!-- Pico W -->
+      <rect class="box-pico" x="520" y="225" width="160" height="410" rx="10"/>
+      <rect class="usb" x="584" y="216" width="32" height="14" rx="3"/>
+      <text class="sub" x="582" y="264" text-anchor="middle">USB → 컴퓨터</text>
+      <text class="title" x="600" y="370" text-anchor="middle">Raspberry Pi</text>
+      <text class="title" x="600" y="388" text-anchor="middle">Pico W</text>
+
+      <!-- 안 쓰는 핀: 왼쪽 1~20 / 오른쪽 40~21 (y = 240 + 20칸) -->
+      <g class="unused">
+        <circle cx="520" cy="240" r="3"/><circle cx="520" cy="260" r="3"/><circle cx="520" cy="280" r="3"/><circle cx="520" cy="300" r="3"/><circle cx="520" cy="320" r="3"/>
+        <circle cx="520" cy="340" r="3"/><circle cx="520" cy="360" r="3"/><circle cx="520" cy="380" r="3"/><circle cx="520" cy="400" r="3"/><circle cx="520" cy="420" r="3"/>
+        <circle cx="520" cy="440" r="3"/><circle cx="520" cy="460" r="3"/><circle cx="520" cy="480" r="3"/><circle cx="520" cy="560" r="3"/><circle cx="520" cy="580" r="3"/><circle cx="520" cy="600" r="3"/><circle cx="520" cy="620" r="3"/>
+        <circle cx="680" cy="260" r="3"/><circle cx="680" cy="300" r="3"/><circle cx="680" cy="320" r="3"/><circle cx="680" cy="380" r="3"/><circle cx="680" cy="420" r="3"/><circle cx="680" cy="340" r="3"/><circle cx="680" cy="360" r="3"/>
+        <circle cx="680" cy="400" r="3"/><circle cx="680" cy="440" r="3"/><circle cx="680" cy="460" r="3"/><circle cx="680" cy="500" r="3"/><circle cx="680" cy="520" r="3"/>
+        <circle cx="680" cy="580" r="3"/><circle cx="680" cy="620" r="3"/>
+      </g>
+      <text class="pin-on" x="530" y="504">14 GP10</text>
+      <text class="pin-on" x="530" y="524">15 GP11</text>
+      <text class="pin-on" x="530" y="544">16 GP12</text>
+      <text class="pin-on" x="670" y="244" text-anchor="end">VBUS 40</text>
+      <text class="pin-on" x="670" y="284" text-anchor="end">GND 38</text>
+      <text class="pin-on" x="670" y="484" text-anchor="end">GND 28</text>
+      <text class="pin-on" x="670" y="544" text-anchor="end">GP19 25</text>
+      <text class="pin-on" x="670" y="564" text-anchor="end">GP18 24</text>
+      <text class="pin-on" x="670" y="604" text-anchor="end">GP17 22</text>
+
+      <!-- MAX7219 눈 -->
+      <rect class="box-main" x="780" y="485" width="170" height="110" rx="8"/>
+      <text class="pin" x="792" y="504">VCC</text>
+      <text class="pin" x="792" y="524">GND</text>
+      <text class="pin" x="792" y="544">DIN</text>
+      <text class="pin" x="792" y="564">CS</text>
+      <text class="pin" x="792" y="584">CLK</text>
+      <text class="pin" x="938" y="504" text-anchor="end">VCC</text>
+      <text class="pin" x="938" y="524" text-anchor="end">GND</text>
+      <text class="pin" x="938" y="544" text-anchor="end">DOUT</text>
+      <text class="pin" x="938" y="564" text-anchor="end">CS</text>
+      <text class="pin" x="938" y="584" text-anchor="end">CLK</text>
+      <text class="title" x="865" y="620" text-anchor="middle">왼쪽 눈 (체인 0)</text>
+      <text class="sub" x="865" y="637" text-anchor="middle">MAX7219 8×8</text>
+
+      <rect class="box-main" x="1010" y="485" width="170" height="110" rx="8"/>
+      <text class="pin" x="1022" y="504">VCC</text>
+      <text class="pin" x="1022" y="524">GND</text>
+      <text class="pin" x="1022" y="544">DIN</text>
+      <text class="pin" x="1022" y="564">CS</text>
+      <text class="pin" x="1022" y="584">CLK</text>
+      <text class="title" x="1095" y="620" text-anchor="middle">오른쪽 눈 (체인 1)</text>
+      <text class="sub" x="1095" y="637" text-anchor="middle">MAX7219 8×8</text>
+      <text class="note" x="980" y="668" text-anchor="middle">왼쪽 모듈 출력쪽 핀 → 오른쪽 모듈 입력쪽 핀</text>
+
+      <!-- 배선: 서보 전원 (빨강 → + 줄, 갈색 → − 줄) -->
+      <path class="w w-vplus" d="M385 102 V130"/><path class="w w-brn" d="M397 102 V150"/>
+      <path class="w w-vplus" d="M585 102 V130"/><path class="w w-brn" d="M597 102 V150"/>
+      <path class="w w-vplus" d="M785 102 V130"/><path class="w w-brn" d="M797 102 V150"/>
+
+      <!-- 배선: 서보 신호 (주황 → Pico) -->
+      <path class="w w-sig" d="M373 102 V540 H520"/>
+      <path class="w w-sig" d="M573 102 V170 H395 V520 H520"/>
+      <path class="w w-sig" d="M773 102 V185 H415 V500 H520"/>
+
+      <!-- 배선: 공통 GND (Pico GND 38 → − 줄) -->
+      <path class="w w-gnd" d="M680 280 H820 V150"/>
+
+      <!-- 배선: 눈 (VBUS는 공통 GND 선을 넘어감) -->
+      <path class="w w-5v" d="M680 240 H812 a8 8 0 0 1 16 0 H1000 V455 H770 V500 H780"/>
+      <path class="w w-gnd" d="M680 480 H700 V520 H780"/>
+      <path class="w w-spi" d="M680 540 H780"/>
+      <path class="w w-spi dash-l" d="M680 600 H760 V560 H780"/>
+      <path class="w w-spi dash-s" d="M680 560 H720 V580 H752 a8 8 0 0 1 16 0 H780"/>
+      <path class="w w-5v" d="M950 500 H1010"/>
+      <path class="w w-gnd" d="M950 520 H1010"/>
+      <path class="w w-spi" d="M950 540 H1010"/>
+      <path class="w w-spi dash-l" d="M950 560 H1010"/>
+      <path class="w w-spi dash-s" d="M950 580 H1010"/>
+
+      <!-- 줄에 닿는 점 -->
+      <g class="dot">
+        <circle cx="236" cy="130" r="4.5"/><circle cx="251" cy="150" r="4.5"/><circle cx="385" cy="130" r="4.5"/><circle cx="585" cy="130" r="4.5"/><circle cx="785" cy="130" r="4.5"/>
+        <circle cx="397" cy="150" r="4.5"/><circle cx="597" cy="150" r="4.5"/><circle cx="797" cy="150" r="4.5"/>
+        <circle cx="820" cy="150" r="4.5"/>
+      </g>
+      <text class="note" x="828" y="198">공통 GND</text>
+
+      <!-- 핀 -->
+      <g class="pinhole">
+        <circle cx="190" cy="130" r="4"/><circle cx="190" cy="150" r="4"/>
+        <circle cx="520" cy="500" r="4"/><circle cx="520" cy="520" r="4"/><circle cx="520" cy="540" r="4"/>
+        <circle cx="680" cy="240" r="4"/><circle cx="680" cy="280" r="4"/><circle cx="680" cy="480" r="4"/>
+        <circle cx="680" cy="540" r="4"/><circle cx="680" cy="560" r="4"/><circle cx="680" cy="600" r="4"/>
+        <circle cx="780" cy="500" r="4"/><circle cx="780" cy="520" r="4"/><circle cx="780" cy="540" r="4"/><circle cx="780" cy="560" r="4"/><circle cx="780" cy="580" r="4"/>
+        <circle cx="950" cy="500" r="4"/><circle cx="950" cy="520" r="4"/><circle cx="950" cy="540" r="4"/><circle cx="950" cy="560" r="4"/><circle cx="950" cy="580" r="4"/>
+        <circle cx="1010" cy="500" r="4"/><circle cx="1010" cy="520" r="4"/><circle cx="1010" cy="540" r="4"/><circle cx="1010" cy="560" r="4"/><circle cx="1010" cy="580" r="4"/>
+      </g>
+    </svg>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--w-vplus)"></i>서보 전원 + (어댑터 5V)</span>
+      <span><i style="background:var(--w-servo-brn)"></i>서보 GND (갈색)</span>
+      <span><i style="background:var(--w-servo-sig)"></i>서보 신호 (주황)</span>
+      <span><i style="background:var(--w-5v)"></i>5V (Pico VBUS)</span>
+      <span><i style="background:var(--w-gnd)"></i>GND</span>
+      <span><i style="background:var(--w-spi)"></i>눈 (실선 DIN · 긴 점선 CS · 짧은 점선 CLK)</span>
+      <span><i style="background:var(--cap)"></i>콘덴서 (KMG 16V)</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section>
+      <h2>핀 연결표</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>부품 / 선</th><th>연결</th><th>물리 번호</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr class="group"><td colspan="4">서보 전원</td></tr>
+            <tr><td><span class="sw" style="background:var(--w-vplus)"></span>어댑터 +</td><td>브레드보드 + 줄</td><td class="num">–</td><td>Pico에는 연결하지 않음</td></tr>
+            <tr><td><span class="sw" style="background:var(--w-gnd)"></span>어댑터 −</td><td>브레드보드 − 줄</td><td class="num">–</td><td></td></tr>
+            <tr><td><span class="sw" style="background:var(--w-gnd)"></span>Pico <code>GND</code></td><td>브레드보드 − 줄</td><td class="num">38</td><td><b>공통 GND, 꼭 필요.</b> 없으면 서보가 떨리거나 안 움직임</td></tr>
+            <tr><td><span class="sw" style="background:var(--w-vplus)"></span>서보 3개 빨강</td><td>+ 줄</td><td class="num">–</td><td rowspan="2">서보 커넥터에 수-수 점퍼선을 꽂아 한 가닥씩 연결</td></tr>
+            <tr><td><span class="sw" style="background:var(--w-servo-brn)"></span>서보 3개 갈색</td><td>− 줄</td><td class="num">–</td></tr>
+            <tr><td><span class="sw" style="background:var(--cap)"></span>콘덴서 긴 다리 (+)</td><td>+ 줄</td><td class="num">–</td><td rowspan="2">KMG 16V 전해 콘덴서. 5V 줄에 쓰기에 내압 충분. <b>방향이 바뀌면 터질 수 있음</b></td></tr>
+            <tr><td><span class="sw" style="background:var(--cap)"></span>콘덴서 흰 띠 쪽 다리 (−)</td><td>− 줄</td><td class="num">–</td></tr>
+
+            <tr class="group"><td colspan="4">서보 신호 (주황 선)</td></tr>
+            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>얼굴 MG996</td><td><code>GP12</code></td><td class="num">16</td><td></td></tr>
+            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>왼쪽 귀 MG90S</td><td><code>GP11</code></td><td class="num">15</td><td></td></tr>
+            <tr><td><span class="sw" style="background:var(--w-servo-sig)"></span>오른쪽 귀 MG90S</td><td><code>GP10</code></td><td class="num">14</td><td></td></tr>
+
+            <tr class="group"><td colspan="4">눈 (MAX7219 × 2)</td></tr>
+            <tr><td><span class="sw" style="background:var(--w-5v)"></span>왼쪽 눈 <code>VCC</code></td><td><code>VBUS</code></td><td class="num">40</td><td>USB 5V</td></tr>
+            <tr><td>왼쪽 눈 <code>GND</code></td><td><code>GND</code></td><td class="num">28</td><td></td></tr>
+            <tr><td>왼쪽 눈 <code>DIN</code></td><td><code>GP19</code></td><td class="num">25</td><td>SPI0 TX</td></tr>
+            <tr><td>왼쪽 눈 <code>CS</code></td><td><code>GP17</code></td><td class="num">22</td><td></td></tr>
+            <tr><td>왼쪽 눈 <code>CLK</code></td><td><code>GP18</code></td><td class="num">24</td><td>SPI0 SCK</td></tr>
+            <tr><td>왼쪽 눈 출력쪽 5핀</td><td>오른쪽 눈 입력쪽 5핀</td><td class="num">–</td><td><code>DOUT</code>→<code>DIN</code>, 나머지는 같은 이름끼리</td></tr>
+
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h2>전원 넣기 전 점검</h2>
+      <ol class="check">
+        <li><strong>서보 빨강 선은 + 줄에만</strong>서보 빨강 선이나 어댑터 +가 Pico 핀에 닿으면 안 됩니다. Pico 핀은 3.3V 전용이고, 서보 전원은 Pico가 감당할 수 없습니다.</li>
+        <li><strong>공통 GND</strong>Pico GND(38번)와 − 줄을 꼭 연결합니다. 이 선이 없으면 서보 신호의 기준이 없어 떨리거나 움직이지 않습니다.</li>
+        <li><strong>어댑터 극성 확인</strong>DC 잭 터미널의 +/− 표시대로 브레드보드 줄에 꽂습니다. 반대로 꽂으면 서보 3개가 한꺼번에 망가집니다.</li>
+        <li><strong>콘덴서 방향 확인</strong>몸통의 흰 띠(− 표시)가 있는 쪽 다리를 − 줄에, 긴 다리를 + 줄에 꽂습니다. 반대로 꽂으면 부풀거나 터질 수 있으니 어댑터를 켜기 전에 다시 봅니다. 서보 가까이 꽂을수록 효과가 좋습니다.</li>
+        <li><strong>켜는 순서</strong>USB로 Pico를 컴퓨터에 꽂고, <code>panel.html</code>에서 [Pico 연결]을 누른 다음 어댑터를 켭니다. 그 뒤 [셀프 테스트]를 실행합니다.</li>
+        <li><strong>Thonny는 닫기</strong>Thonny가 켜져 있으면 USB 포트를 차지해서 패널이 연결되지 않습니다.</li>
+      </ol>
+      <p class="warn"><strong>Pico가 자꾸 재부팅되거나 서보가 떨릴 때</strong> MG996은 순간적으로 2A 넘게 쓸 수 있어서 미니 브레드보드의 얇은 줄로는 전압이 떨어질 수 있습니다. KMG 콘덴서가 순간 전류를 받아 주지만, 그래도 재부팅되면 어댑터 선을 굵은 선으로 바꾸거나 용량이 큰 콘덴서(470~1000µF)로 바꿉니다. 패널의 [전원 강하 테스트]로 확인하세요.</p>
+      <p class="warn"><strong>눈이 안 켜지거나 깨질 때</strong> MAX7219는 5V 칩이라 Pico의 3.3V 신호를 잘 못 알아들을 수 있습니다. 문제가 있으면 DIN·CS·CLK 세 선에 레벨 시프터(3.3V→5V)를 넣습니다.</p>
+    </section>
+  </div>
+</div>

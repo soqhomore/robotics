@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>토끼 로봇 조작판</title>
+<style>
+/* Layout: 상단 고정 상태바 + 카드 그리드. 컴퓨터에서 파일로 열고 USB(Web Serial)로 Pico와 통신한다. 외부 리소스 없음 */
+:root {
+  --bg: #f3f5f2;
+  --panel: #ffffff;
+  --ink: #1c2320;
+  --muted: #5f6b66;
+  --line: #d8dfdb;
+  --soft: #eaf0ec;
+  --accent: #1f7a68;
+  --accent-ink: #ffffff;
+  --ok: #2e8b57;
+  --warn: #b7791f;
+  --bad: #c0392b;
+  --font: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121715; --panel: #1b2220; --ink: #e5ebe8; --muted: #98a59f; --line: #303b37; --soft: #222b28;
+    --accent: #4fc2a8; --accent-ink: #0f1a16; --ok: #5fd08a; --warn: #e6b450; --bad: #ff6b5e;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font); -webkit-tap-highlight-color: transparent; }
+
+.top { position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line);
+  padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.top h1 { font-size: 17px; margin: 0; white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; min-width: 0; }
+.chip { font-size: 12.5px; padding: 3px 10px; border-radius: 999px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.chip.ok { color: var(--ok); }
+.chip.warn { color: var(--warn); }
+.chip.bad { color: var(--bad); }
+.chip.live { background: var(--accent); color: var(--accent-ink); }
+.top-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+main { max-width: 1400px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); align-items: start; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.card h2 { font-size: 15px; margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.card h2 small { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.hint { font-size: 12.5px; color: var(--muted); margin: 0; }
+.span-2 { grid-column: span 2; }
+@media (max-width: 800px) { .span-2 { grid-column: auto; } }
+
+button { font: inherit; font-size: 14px; border: 1px solid var(--line); background: var(--soft); color: var(--ink);
+  border-radius: 8px; padding: 8px 12px; cursor: pointer; min-height: 38px; touch-action: manipulation; }
+button:hover { border-color: var(--accent); }
+button:active { transform: translateY(1px); }
+button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.danger { background: var(--bad); color: #fff; border-color: var(--bad); }
+button.ghost { background: transparent; }
+button.sm { min-height: 30px; padding: 4px 10px; font-size: 13px; }
+button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+
+input[type=range] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+input[type=number], select { font: inherit; font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel); color: var(--ink); min-width: 0; }
+input[type=number] { width: 90px; font-family: var(--mono); }
+label.check { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+label.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+.servo { display: grid; gap: 6px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.servo:last-of-type { border-bottom: 0; padding-bottom: 0; }
+.servo-head { display: flex; justify-content: space-between; align-items: end; gap: 8px; }
+.servo-head small { display: block; color: var(--muted); font-size: 12px; }
+.readout { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.readout .big { font-size: 22px; font-weight: 600; }
+.scale { display: flex; justify-content: space-between; font: 11.5px var(--mono); color: var(--muted); margin-top: -4px; }
+
+.setting { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; align-items: center; }
+.setting input[type=range] { grid-column: 1 / -1; }
+.setting output { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+
+.editor { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+@media (max-width: 420px) { .editor { grid-template-columns: 1fr; } }
+.grid8 { display: grid; grid-template-columns: repeat(8, 26px); gap: 3px; touch-action: none; user-select: none; }
+.grid8 i { width: 26px; height: 26px; border-radius: 50%; background: var(--soft); border: 1px solid var(--line); cursor: pointer; }
+.grid8 i.lit { background: var(--bad); border-color: var(--bad); box-shadow: 0 0 8px color-mix(in srgb, var(--bad) 60%, transparent); }
+.editor-side { display: grid; gap: 8px; align-content: start; }
+
+
+.progress { height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+.progress div { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td { padding: 5px 4px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td:nth-child(2) { width: 100px; }
+td:nth-child(3) { width: 110px; text-align: right; }
+
+dl.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin: 0; }
+dl.stats div { background: var(--soft); border-radius: 8px; padding: 8px 10px; }
+dl.stats dt { font-size: 12px; color: var(--muted); }
+dl.stats dd { margin: 0; font: 600 16px var(--mono); font-variant-numeric: tabular-nums; }
+dl.stats div.alert dd { color: var(--bad); }
+
+.log { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow-y: auto; font: 12.5px/1.5 var(--mono);
+  border: 1px solid var(--line); border-radius: 8px; }
+.log li { padding: 4px 10px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 62px 1fr; gap: 8px; }
+.log li span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.log li.warn { color: var(--warn); }
+.log li.error { color: var(--bad); }
+
+#toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--ink); color: var(--bg);
+  padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: calc(100% - 32px); }
+#toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>토끼 로봇 조작판</h1>
+  <div class="chips">
+    <span class="chip" id="conn">연결 중…</span>
+    <span class="chip" id="mode">대기</span>
+    <span class="chip" id="pwr">서보 힘</span>
+    <span class="chip warn" id="dirty" hidden>설정 저장 안 됨</span>
+  </div>
+  <div class="top-actions">
+    <button id="btnConnect" class="primary">Pico 연결</button>
+    <button id="btnStop">동작 정지</button>
+    <button id="btnHome">기본 자세</button>
+    <button id="btnPower" class="danger">힘 빼기</button>
+  </div>
+</header>
+
+<main>
+  <section class="card span-2" id="noSerial" hidden>
+    <h2>이 브라우저에서는 USB 연결을 쓸 수 없습니다</h2>
+    <p class="hint">크롬 또는 엣지(PC/Mac)에서 이 파일을 열어 주세요. 사파리와 파이어폭스, 휴대폰 브라우저는 USB 시리얼을 지원하지 않습니다.</p>
+  </section>
+  <!-- 서보 -->
+  <section class="card">
+    <h2>서보 직접 조작 <small>슬라이더는 놓기 전에도 따라 움직임</small></h2>
+    <div id="servos"></div>
+    <div class="btns">
+      <button data-cmd='{"c":"ears","up":true}'>귀 세우기</button>
+      <button data-cmd='{"c":"ears","up":false}'>귀 내리기</button>
+      <button data-cmd='{"c":"home"}'>기본 자세</button>
+    </div>
+  </section>
+
+  <!-- 동작 -->
+  <section class="card">
+    <h2>동작 실행 <small id="modeText">대기 중</small></h2>
+    <div class="btn-grid" id="actions"></div>
+    <h2>반복 테스트</h2>
+    <div class="btns" style="align-items:center">
+      <select id="repAction" aria-label="반복할 동작"></select>
+      <label>횟수 <input type="number" id="repCount" value="30" min="1" max="999"></label>
+      <label>간격(ms) <input type="number" id="repInterval" value="800" min="0" step="100"></label>
+      <button class="primary" id="repStart">시작</button>
+    </div>
+    <div class="progress"><div id="repBar"></div></div>
+    <p class="hint" id="repText">구현안 시험 기준: 30회 이상 반복해서 동작·복귀가 정상인지 확인</p>
+    <div class="setting"><span>반응 동작 유지 시간 (ms)</span><output data-val="alert_hold_ms"></output>
+      <input type="range" min="300" max="5000" step="100" data-set="alert_hold_ms" aria-label="반응 동작 유지 시간"></div>
+  </section>
+
+  <!-- 눈 -->
+  <section class="card">
+    <h2>눈 표정 <small id="exprNow">-</small></h2>
+    <div class="btns" id="exprs"></div>
+    <div class="editor">
+      <div class="grid8" id="grid" aria-label="8×8 도트 편집기"></div>
+      <div class="editor-side">
+        <select id="pxTarget" aria-label="보낼 눈">
+          <option value="both">양쪽 눈</option>
+          <option value="left">왼쪽 눈만</option>
+          <option value="right">오른쪽 눈만</option>
+        </select>
+        <button class="primary" id="pxSend">눈에 보내기</button>
+        <select id="pxLoad" aria-label="표정 불러오기"><option value="">표정 불러오기…</option></select>
+        <div class="btns">
+          <button class="sm" id="pxClear">지우기</button>
+          <button class="sm" id="pxInvert">반전</button>
+        </div>
+      </div>
+    </div>
+    <div class="setting">
+      <span>밝기</span><output data-val="eye_brightness"></output>
+      <input type="range" min="0" max="15" step="1" data-set="eye_brightness" aria-label="눈 밝기">
+    </div>
+    <div class="btns">
+      <label class="check"><input type="checkbox" data-set="eye_swap"> 좌우 바꾸기</label>
+      <label class="check"><input type="checkbox" data-set="eye_rotate"> 180° 회전</label>
+      <label class="check"><input type="checkbox" data-set="idle_anim"> 자동 깜빡임·표정</label>
+    </div>
+    <div class="btns"><button class="sm" data-cmd='{"c":"eye_test"}'>전체 점등 테스트</button></div>
+  </section>
+
+  <!-- 보정 -->
+  <section class="card">
+    <h2>보정 <small>바꾼 값은 저장해야 재부팅 후에도 남음</small></h2>
+    <p class="hint">서보를 원하는 위치로 옮긴 뒤 <b>현재 위치로</b>를 누르면 그 각도가 들어갑니다.</p>
+    <table><tbody id="cal"></tbody></table>
+    <div class="btns">
+      <button class="primary" id="btnSave">Pico에 저장</button>
+      <button id="btnDefaults">기본값으로</button>
+    </div>
+  </section>
+
+  <!-- 진단 -->
+  <section class="card">
+    <h2>진단 <small>Pico 출력과 오류 메시지도 로그에 표시</small></h2>
+    <dl class="stats" id="stats"></dl>
+    <div class="btns">
+      <button class="sm" data-cmd='{"c":"reset_stats"}'>통계 초기화</button>
+      <button class="sm" id="btnSoftReset">Pico 프로그램 다시 시작</button>
+      <button class="sm" id="btnReboot">Pico 재부팅</button>
+    </div>
+    <h2>로그 <small><button class="sm ghost" id="btnLogSave">파일로 저장</button> <button class="sm ghost" id="btnLogClear">지우기</button></small></h2>
+    <ul class="log" id="log"></ul>
+  </section>
+</main>
+
+<div id="toast" role="status"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+const SERVOS = [
+  { id: "face", label: "얼굴 회전", ch: "CH0 · MG996R", presets: [["최소", "face_min"], ["중앙", "face_center"], ["최대", "face_max"]] },
+  { id: "ear_l", label: "왼쪽 귀", ch: "CH1 · MG90S", presets: [["내림", "ear_l_down"], ["세움", "ear_l_up"]] },
+  { id: "ear_r", label: "오른쪽 귀", ch: "CH2 · MG90S", presets: [["내림", "ear_r_down"], ["세움", "ear_r_up"]] },
+];
+const EXPR_LABEL = { normal: "기본", round: "경청", blink: "감은 눈", sleepy: "졸림", smile: "웃음", heart: "하트", x: "X", custom: "직접 그림" };
+const CAL = [
+  ["face_center", "얼굴 중앙", true], ["face_min", "얼굴 최소", true], ["face_max", "얼굴 최대", true],
+  ["face_glance", "반응 시 고개 폭"],
+  ["ear_l_down", "왼쪽 귀 내림", true], ["ear_l_up", "왼쪽 귀 세움", true],
+  ["ear_r_down", "오른쪽 귀 내림", true], ["ear_r_up", "오른쪽 귀 세움", true],
+  ["ear_min", "귀 하한 (안전)"], ["ear_max", "귀 상한 (안전)"],
+  ["face_speed", "얼굴 속도 (°/s)"], ["ear_speed", "귀 속도 (°/s)"],
+  ["servo_min_us", "0° 펄스 (µs)"], ["servo_max_us", "180° 펄스 (µs)"],
+];
+const STATS = [
+  ["t", "가동 시간", v => fmtTime(v)], ["loop_hz", "제어 루프 (Hz)"], ["loop_max_ms", "최대 지연 (ms)", null, v => v > 200],
+  ["alerts", "반응 동작"],
+  ["actions", "동작 완료"], ["mem_free", "남은 메모리", v => (v / 1024).toFixed(0) + " KB"], ["reset", "부팅 원인"],
+];
+
+let cfg = null, exprs = {}, actionLabels = {}, bootId = null;
+let logLines = [];
+let dragging = {}, lastState = null;
+const lastStatsExtra = {};
+
+// ---------- 통신 ----------
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// USB 시리얼(Web Serial). Pico는 명령 한 줄마다 "@R" 결과를 순서대로 돌려주므로 대기열로 짝을 맞춘다
+const RP2_VENDOR = 0x2E8A;
+let port = null, writer = null, lastStateAt = 0, helloTimer = null;
+const pendingResults = [];
+
+async function writeRaw(text) {
+  if (!writer) throw new Error("not connected");
+  await writer.write(new TextEncoder().encode(text));
+}
+
+function api(body, quiet) {
+  if (!writer) {
+    if (!quiet) toast("Pico가 연결되어 있지 않습니다. [Pico 연결]을 누르세요.");
+    return Promise.resolve(null);
+  }
+  return new Promise(resolve => {
+    const entry = { quiet, resolve };
+    entry.timer = setTimeout(() => {
+      const i = pendingResults.indexOf(entry);
+      if (i >= 0) pendingResults.splice(i, 1);
+      resolve(null);
+    }, 3000);
+    pendingResults.push(entry);
+    writeRaw(JSON.stringify(body) + "\n").catch(() => {
+      if (!quiet) toast("명령을 보내지 못했습니다. USB 연결을 확인하세요.");
+    });
+  });
+}
+
+function onResult(j) {
+  const entry = pendingResults.shift();
+  if (j.cfg) { cfg = j.cfg; fillSettings(); }
+  if (!j.ok && !(entry && entry.quiet)) toast(j.err || "실패");
+  if (entry) { clearTimeout(entry.timer); entry.resolve(j); }
+}
+
+function onConfig(c) {
+  if (bootId !== null && c.boot !== bootId) toast("Pico가 다시 시작됐습니다");
+  bootId = c.boot;
+  cfg = c.cfg; exprs = c.exprs;
+  buildActions(c.actions); buildExprs(); fillSettings();
+  lastStatsExtra.reset = c.reset;
+}
+
+function handleLine(line) {
+  const tag = line.slice(0, 2), body = line.slice(3);
+  try {
+    if (tag === "@S") { lastStateAt = Date.now(); render(JSON.parse(body)); return; }
+    if (tag === "@L") { addLog(JSON.parse(body)); return; }
+    if (tag === "@R") { onResult(JSON.parse(body)); return; }
+    if (tag === "@C") { onConfig(JSON.parse(body)); return; }
+  } catch (e) { /* 깨진 줄은 아래에서 원문으로 보여 준다 */ }
+  if (!line.trim()) return;
+  // 패널 형식이 아닌 출력: 오류 메시지(Traceback), print, REPL 프롬프트 등
+  addLog([0, null, /Traceback|Error/.test(line) ? "error" : "raw", line]);
+  if (line.startsWith(">>>") || line.includes("MicroPython v")) {
+    toast("Pico 프로그램이 멈춰 있습니다. 진단의 [Pico 프로그램 다시 시작]을 누르세요.");
+  }
+  if (line.includes("준비 완료")) sendHello();   // 소프트 리셋 후 다시 붙기
+}
+
+async function readLoop(p) {
+  const reader = p.readable.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n")) >= 0) {
+        handleLine(buf.slice(0, i).replace(/\r$/, ""));
+        buf = buf.slice(i + 1);
+      }
+    }
+  } catch (e) {
+    /* 케이블이 빠지거나 Pico가 재부팅되면 여기로 온다 */
+  } finally {
+    reader.releaseLock();
+    await closePort(p);
+  }
+}
+
+function sendHello() {
+  clearTimeout(helloTimer);
+  writeRaw("\r\n").then(() => api({ c: "hello" }, true)).catch(() => {});
+  helloTimer = setTimeout(() => {
+    if (writer && Date.now() - lastStateAt > 2500) {
+      toast("Pico에서 응답이 없습니다. main.py가 실행 중인지 확인하거나 [Pico 프로그램 다시 시작]을 누르세요.");
+    }
+  }, 3000);
+}
+
+async function openPort(p) {
+  try {
+    await p.open({ baudRate: 115200 });
+    port = p;
+    writer = p.writable.getWriter();
+    setConn(true);
+    readLoop(p);
+    sendHello();
+  } catch (e) {
+    setConn(false);
+    toast(e.name === "InvalidStateError" ? "포트가 이미 열려 있습니다." :
+      "포트를 열 수 없습니다. Thonny가 켜져 있으면 닫고 다시 시도하세요.");
+  }
+}
+
+async function closePort(p) {
+  if (port !== p) return;
+  if (writer) { try { writer.releaseLock(); } catch (e) {} }
+  try { await p.close(); } catch (e) {}
+  writer = null;
+  port = null;
+  pendingResults.splice(0).forEach(r => { clearTimeout(r.timer); r.resolve(null); });
+  setConn(false);
+}
+
+async function connect() {
+  if (port) {           // 연결 끊기
+    try { await writeRaw('{"c":"bye"}\n'); } catch (e) {}
+    try { await port.readable.cancel(); } catch (e) {}
+    return;
+  }
+  try {
+    const p = await navigator.serial.requestPort({ filters: [{ usbVendorId: RP2_VENDOR }] });
+    await openPort(p);
+  } catch (e) {
+    if (e.name !== "NotFoundError") toast("포트 선택에 실패했습니다: " + e.message);
+  }
+}
+
+function setConn(ok) {
+  const c = $("#conn");
+  c.textContent = ok ? "USB 연결됨" : "연결 안 됨";
+  c.className = "chip " + (ok ? "ok" : "bad");
+  $("#btnConnect").textContent = ok ? "연결 끊기" : "Pico 연결";
+  $("#btnConnect").className = ok ? "" : "primary";
+}
+
+function initSerial() {
+  if (!("serial" in navigator)) {
+    $("#noSerial").hidden = false;
+    $("#btnConnect").disabled = true;
+    return;
+  }
+  $("#btnConnect").onclick = connect;
+  navigator.serial.addEventListener("connect", e => { if (!port) openPort(e.target); });   // 재부팅 후 자동 재연결
+  navigator.serial.getPorts().then(ports => {
+    const pico = ports.find(p => (p.getInfo().usbVendorId || 0) === RP2_VENDOR);
+    if (pico && !port) openPort(pico);   // 전에 허용한 Pico가 꽂혀 있으면 바로 연결
+  });
+  $("#btnSoftReset").onclick = async () => {
+    if (!writer) return toast("먼저 Pico를 연결하세요.");
+    await writeRaw("\x03");                                     // Ctrl+C: 실행 중인 프로그램 중단
+    setTimeout(() => writeRaw("\x04").catch(() => {}), 200);   // Ctrl+D: 소프트 리셋 → main.py 다시 실행
+    toast("Pico 프로그램을 다시 시작합니다");
+  };
+}
+
+// ---------- 서보 ----------
+function buildServos() {
+  $("#servos").innerHTML = SERVOS.map(s => `
+    <div class="servo" id="sv-${s.id}">
+      <div class="servo-head">
+        <div><b>${s.label}</b><small>${s.ch}</small></div>
+        <div class="readout"><span class="big" data-pos>–</span>°<small>목표 <span data-tgt>–</span>°</small></div>
+      </div>
+      <input type="range" min="0" max="180" step="1" data-range aria-label="${s.label} 각도">
+      <div class="scale"><span data-min>0°</span><span data-max>180°</span></div>
+      <div class="btns">
+        <button class="sm" data-nudge="-5">−5</button><button class="sm" data-nudge="-1">−1</button>
+        <button class="sm" data-nudge="1">+1</button><button class="sm" data-nudge="5">+5</button>
+        ${s.presets.map(p => `<button class="sm ghost" data-preset="${p[1]}">${p[0]}</button>`).join("")}
+      </div>
+    </div>`).join("");
+
+  const pending = {}, timers = {};
+  SERVOS.forEach(s => {
+    const root = $("#sv-" + s.id), range = root.querySelector("[data-range]");
+    range.addEventListener("input", () => {
+      dragging[s.id] = Date.now();
+      pending[s.id] = +range.value;
+      if (timers[s.id]) return;
+      timers[s.id] = setTimeout(() => { timers[s.id] = null; api({ c: "servo", id: s.id, deg: pending[s.id] }, true); }, 90);
+    });
+    range.addEventListener("change", () => { dragging[s.id] = Date.now(); api({ c: "servo", id: s.id, deg: +range.value }); });
+    root.querySelectorAll("[data-nudge]").forEach(b => b.onclick = () => api({ c: "nudge", id: s.id, delta: +b.dataset.nudge }));
+    root.querySelectorAll("[data-preset]").forEach(b => b.onclick = () => cfg && api({ c: "servo", id: s.id, deg: cfg[b.dataset.preset] }));
+  });
+}
+
+function renderServos(st) {
+  SERVOS.forEach(s => {
+    const d = st.servos[s.id], root = $("#sv-" + s.id), range = root.querySelector("[data-range]");
+    root.querySelector("[data-pos]").textContent = d.pos.toFixed(0);
+    root.querySelector("[data-tgt]").textContent = d.target.toFixed(0);
+    range.min = d.min; range.max = d.max;
+    root.querySelector("[data-min]").textContent = d.min + "°";
+    root.querySelector("[data-max]").textContent = d.max + "°";
+    if (!dragging[s.id] || Date.now() - dragging[s.id] > 600) range.value = d.target;
+  });
+}
+
+// ---------- 동작 ----------
+function buildActions(list) {
+  actionLabels = Object.fromEntries(list);
+  $("#actions").innerHTML = list.map(([k, l]) => `<button data-action="${k}">${l}</button>`).join("");
+  $$("[data-action]").forEach(b => b.onclick = () => api({ c: "action", name: b.dataset.action }));
+  $("#repAction").innerHTML = list.map(([k, l]) => `<option value="${k}">${l}</option>`).join("");
+}
+
+$("#repStart").onclick = () => api({
+  c: "action", name: $("#repAction").value,
+  count: Math.max(1, +$("#repCount").value || 1), interval: Math.max(0, +$("#repInterval").value || 0),
+});
+
+// ---------- 눈 ----------
+let grid = [0, 0, 0, 0, 0, 0, 0, 0];
+
+function buildGrid() {
+  const g = $("#grid");
+  g.innerHTML = Array.from({ length: 64 }, (_, i) => `<i data-i="${i}"></i>`).join("");
+  let painting = null;
+  const paint = el => {
+    if (!el || el.dataset.i === undefined) return;
+    const i = +el.dataset.i, r = i >> 3, bit = 0x80 >> (i & 7);
+    grid[r] = painting ? grid[r] | bit : grid[r] & ~bit;
+    drawGrid();
+  };
+  g.addEventListener("pointerdown", e => {
+    const el = e.target;
+    if (el.dataset.i === undefined) return;
+    const i = +el.dataset.i;
+    painting = !(grid[i >> 3] & (0x80 >> (i & 7)));
+    paint(el);
+    e.preventDefault();
+  });
+  g.addEventListener("pointermove", e => { if (painting !== null) paint(document.elementFromPoint(e.clientX, e.clientY)); });
+  window.addEventListener("pointerup", () => painting = null);
+  drawGrid();
+}
+
+function drawGrid() {
+  $$("#grid i").forEach(el => {
+    const i = +el.dataset.i;
+    el.classList.toggle("lit", !!(grid[i >> 3] & (0x80 >> (i & 7))));
+  });
+}
+
+function buildExprs() {
+  $("#exprs").innerHTML = Object.keys(exprs).map(k => `<button class="sm" data-expr="${k}">${EXPR_LABEL[k] || k}</button>`).join("");
+  $$("[data-expr]").forEach(b => b.onclick = () => api({ c: "expr", name: b.dataset.expr }));
+  $("#pxLoad").innerHTML = '<option value="">표정 불러오기…</option>' +
+    Object.keys(exprs).map(k => `<option value="${k}">${EXPR_LABEL[k] || k}</option>`).join("");
+}
+
+$("#pxLoad").onchange = e => { if (exprs[e.target.value]) { grid = [...exprs[e.target.value]]; drawGrid(); } e.target.value = ""; };
+$("#pxClear").onclick = () => { grid = [0, 0, 0, 0, 0, 0, 0, 0]; drawGrid(); };
+$("#pxInvert").onclick = () => { grid = grid.map(b => ~b & 0xFF); drawGrid(); };
+$("#pxSend").onclick = () => {
+  const t = $("#pxTarget").value;
+  api({ c: "pixels", left: t !== "right" ? grid : null, right: t !== "left" ? grid : null });
+};
+
+// ---------- 설정 바인딩 ----------
+function bindSettings() {
+  $$("[data-set]").forEach(el => {
+    el.addEventListener("input", () => showVal(el));
+    el.addEventListener("change", () => api({ c: "set", key: el.dataset.set, value: el.type === "checkbox" ? el.checked : +el.value }));
+  });
+}
+
+function showVal(el) {
+  const out = $(`[data-val="${el.dataset.set}"]`);
+  if (out) out.textContent = el.value;
+}
+
+function fillSettings() {
+  if (!cfg) return;
+  $$("[data-set]").forEach(el => {
+    if (document.activeElement === el) return;
+    const v = cfg[el.dataset.set];
+    if (el.type === "checkbox") el.checked = !!v; else el.value = v;
+    showVal(el);
+  });
+  $$("[data-cal]").forEach(i => { if (document.activeElement !== i) i.value = cfg[i.dataset.cal]; });
+}
+
+function buildCal() {
+  $("#cal").innerHTML = CAL.map(([k, l, cap]) => `
+    <tr><td>${l}</td><td><input type="number" data-cal="${k}" aria-label="${l}"></td>
+    <td>${cap ? `<button class="sm ghost" data-cap="${k}">현재 위치로</button>` : ""}</td></tr>`).join("");
+  $$("[data-cal]").forEach(i => i.onchange = () => api({ c: "set", key: i.dataset.cal, value: +i.value }));
+  $$("[data-cap]").forEach(b => b.onclick = async () => {
+    const j = await api({ c: "capture", key: b.dataset.cap });
+    if (j && j.ok && j.cfg) toast(`${b.closest("tr").cells[0].textContent} = ${j.cfg[b.dataset.cap]}° (저장 전)`);
+  });
+}
+
+$("#btnSave").onclick = async () => { const j = await api({ c: "save" }); if (j && j.ok) toast("Pico에 저장했습니다"); };
+$("#btnDefaults").onclick = () => { if (confirm("모든 설정을 기본값으로 되돌릴까요? (저장 전까지는 Pico에 남지 않음)")) api({ c: "defaults" }); };
+$("#btnReboot").onclick = () => { if (confirm("Pico를 재부팅할까요? 저장하지 않은 설정은 사라집니다.")) api({ c: "reboot" }); };
+
+// ---------- 상단 버튼 ----------
+$("#btnStop").onclick = () => api({ c: "stop" });
+$("#btnHome").onclick = () => api({ c: "home" });
+$("#btnPower").onclick = () => api({ c: lastState && lastState.power ? "relax" : "enable" });
+$$("[data-cmd]").forEach(b => b.onclick = () => api(JSON.parse(b.dataset.cmd)));
+
+// ---------- 상태 반영 ----------
+function fmtTime(s) {
+  const m = Math.floor(s / 60), h = Math.floor(m / 60);
+  return h ? `${h}시간 ${m % 60}분` : m ? `${m}분 ${Math.floor(s % 60)}초` : `${Math.floor(s)}초`;
+}
+
+function render(st) {
+  lastState = st;
+
+  renderServos(st);
+
+  const busy = st.mode !== "idle";
+  const modeName = busy ? (actionLabels[st.mode] || st.mode) : "대기";
+  $("#mode").textContent = busy ? "동작: " + modeName : "대기";
+  $("#mode").className = "chip" + (busy ? " live" : "");
+  $("#modeText").textContent = busy ? modeName + " 실행 중" : "대기 중";
+  $$("[data-action]").forEach(b => b.classList.toggle("on", b.dataset.action === st.mode));
+
+  $("#pwr").textContent = st.power ? "서보 힘 ON" : "서보 힘 OFF";
+  $("#pwr").className = "chip " + (st.power ? "ok" : "warn");
+  $("#btnPower").textContent = st.power ? "힘 빼기" : "힘 다시 켜기";
+  $("#btnPower").className = st.power ? "danger" : "primary";
+  $("#dirty").hidden = !st.dirty;
+
+  $("#exprNow").textContent = "지금: " + (EXPR_LABEL[st.expr] || st.expr || "-") + " · 기본: " + (EXPR_LABEL[st.base] || st.base);
+  $$("[data-expr]").forEach(b => b.classList.toggle("on", b.dataset.expr === st.base));
+
+
+  if (st.rep) {
+    $("#repBar").style.width = (st.rep.i / st.rep.n * 100) + "%";
+    $("#repText").textContent = `${st.rep.name}: ${st.rep.i} / ${st.rep.n}`;
+  } else if ($("#repBar").style.width && !busy) {
+    $("#repBar").style.width = "0";
+    $("#repText").textContent = "반복 테스트 대기";
+  }
+
+  const s = Object.assign({ t: st.t }, st.stats, lastStatsExtra);
+  $("#stats").innerHTML = STATS.map(([k, label, fmt, bad]) => {
+    const v = s[k];
+    return `<div class="${bad && bad(v) ? "alert" : ""}"><dt>${label}</dt><dd>${v === undefined ? "-" : fmt ? fmt(v) : v}</dd></div>`;
+  }).join("");
+
+}
+
+// [id, Pico 가동 시간(초) 또는 null, level, 메시지]
+function addLog([id, t, level, msg]) {
+  const time = t === null ? new Date().toTimeString().slice(0, 8) : t.toFixed(1) + "s";
+  logLines.push(`[${time}] ${level.toUpperCase()} ${msg}`);
+  const ul = $("#log");
+  const li = document.createElement("li");
+  li.className = level;
+  li.innerHTML = "<span></span><div></div>";
+  li.firstChild.textContent = time;
+  li.lastChild.textContent = msg;
+  ul.prepend(li);
+  while (ul.children.length > 300) ul.lastChild.remove();
+  if (level === "error") toast(msg);
+}
+
+$("#btnLogClear").onclick = () => { $("#log").innerHTML = ""; logLines = []; };
+$("#btnLogSave").onclick = () => {
+  const blob = new Blob([logLines.join("\n")], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "rabbit-log-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".txt";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+
+buildServos();
+buildGrid();
+buildCal();
+bindSettings();
+setConn(false);
+initSerial();
+</script>
+</body>
+</html>
