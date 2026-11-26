@@ -327,7 +327,19 @@ function handleLine(line) {
     toast("Pico 프로그램이 멈춰 있습니다. 진단의 [Pico 프로그램 다시 시작]을 누르세요.");
   }
   if (line.includes("준비 완료")) sendHello();   // 소프트 리셋 후 다시 붙기
+  if (line.includes("모르는 명령") || line.includes("--- 명령어 ---")) {
+    toast("Pico에 이 패널용이 아닌 main.py가 올라가 있습니다. pico/main.py를 main.py로 다시 저장하세요.");
+  }
 }
+
+// 연결은 됐는데 Pico 상태가 2초 넘게 안 오면 상단에 계속 표시
+setInterval(() => {
+  if (!writer) return;
+  const silent = Date.now() - lastStateAt > 2000;
+  const c = $("#conn");
+  c.textContent = silent ? "USB 연결됨 · Pico 응답 없음" : "USB 연결됨";
+  c.className = "chip " + (silent ? "warn" : "ok");
+}, 1000);
 
 async function readLoop(p) {
   const reader = p.readable.getReader();
@@ -365,7 +377,10 @@ function sendHello() {
 async function openPort(p) {
   try {
     await p.open({ baudRate: 115200 });
+    // DTR이 꺼져 있으면 Pico(MicroPython)가 출력을 버려서 상태가 안 온다. 브라우저/OS에 따라 기본값이 달라 직접 켠다
+    try { await p.setSignals({ dataTerminalReady: true, requestToSend: true }); } catch (e) {}
     port = p;
+    lastStateAt = 0;
     writer = p.writable.getWriter();
     setConn(true);
     readLoop(p);
